@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "pt-BR",
     dir: "ltr",
     background_color: "#1b281a",
-    theme_color: "#1b281a",
+    theme_color: "#243521",
     categories: ["food", "shopping"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

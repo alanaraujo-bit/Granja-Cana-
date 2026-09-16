@@ -29,7 +29,6 @@ type CartState = {
   add: (productId: string, qty: number) => void;
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
-  clear: () => void;
   completeOrder: (order: PlacedOrder) => void;
 };
 
@@ -80,8 +79,6 @@ export const useCart = create<CartState>()(
 
       remove: (productId) =>
         set((state) => ({ lines: state.lines.filter((l) => l.productId !== productId) })),
-
-      clear: () => set({ lines: [] }),
 
       completeOrder: (order) => set({ lines: [], lastOrder: order }),
     }),

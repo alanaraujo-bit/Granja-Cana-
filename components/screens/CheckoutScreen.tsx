@@ -65,7 +65,9 @@ export function CheckoutScreen() {
     const next: Errors = {};
     if (name.trim().length < 2) next.name = "Informe o nome de quem vai receber.";
     if (address.trim().length < 6) next.address = "Informe rua, número e bairro.";
-    if (!slotId) next.slot = "Escolha um horário de entrega.";
+    // Uma faixa escolhida às 09h58 deixa de existir às 10h. Validar só o id
+    // deixaria passar um pedido sem horário de entrega.
+    if (!slotId || !slot) next.slot = "Escolha um horário de entrega.";
     if (!payment) next.payment = "Escolha a forma de pagamento.";
     return next;
   }
@@ -93,12 +95,12 @@ export function CheckoutScreen() {
       code: generateOrderCode(),
       lines,
       totalCents: cartTotalCents(lines),
-      slotId: slotId!,
-      slotLabel: slot ? `${slot.dayLabel}, ${slot.dateLabel} · ${slot.timeLabel}` : "",
+      slotId: slot!.id,
+      slotLabel: `${slot!.dayLabel}, ${slot!.dateLabel} · ${slot!.timeLabel}`,
       payment: payment!,
       customerName: name.trim(),
       address: [address.trim(), reference.trim()].filter(Boolean).join(" · "),
-      changeForCents: parseChange(changeFor),
+      changeForCents: payment === "dinheiro" ? parseChange(changeFor) : null,
       placedAt: new Date().toISOString(),
     });
 

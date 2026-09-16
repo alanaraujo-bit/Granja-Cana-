@@ -119,14 +119,6 @@ export function getAvailableDays(now: Date = new Date(), maxDays = 5): DeliveryD
   return days;
 }
 
-export function findSlot(id: string, now: Date = new Date()): DeliverySlot | undefined {
-  for (const day of getAvailableDays(now)) {
-    const slot = day.slots.find((s) => s.id === id);
-    if (slot) return slot;
-  }
-  return undefined;
-}
-
 /** Texto curto de status para a Home: aberto agora ou próxima abertura. */
 export function getOpenStatus(now: Date = new Date()): { open: boolean; label: string } {
   const hour = now.getHours();

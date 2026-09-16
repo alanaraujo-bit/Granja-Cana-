@@ -48,7 +48,9 @@ export const viewport: Viewport = {
   // A interface desenha sob as barras do sistema; o respiro volta via
   // env(safe-area-inset-*) em cada superfície fixa.
   viewportFit: "cover",
-  themeColor: "#1b281a",
+  // Igual ao topo da Home (canaa-800): a barra de status do Android continua
+  // a superfície do aplicativo, sem faixa visível.
+  themeColor: "#243521",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
