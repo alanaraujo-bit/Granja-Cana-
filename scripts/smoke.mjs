@@ -12,8 +12,9 @@
  *
  * Aceita outra origem: `npm run smoke -- http://localhost:3100`.
  *
- * Os pedidos criados levam o nome SMOKE_NAME, para serem identificados e
- * apagados: `delete from orders where customer_name = 'Teste de fumaça'`.
+ * Com o banco disponível, cada pedido criado é apagado logo após a conferência,
+ * então o teste pode rodar contra produção sem deixar rastro. Sem banco, os
+ * pedidos ficam com o nome SMOKE_NAME para limpeza manual.
  */
 import { chromium } from "playwright";
 import pg from "pg";
@@ -107,9 +108,16 @@ for (const vp of VIEWPORTS) {
           where o.code = $1 group by o.id`,
         [code?.trim()],
       );
-      if (rows.length !== 1) note(`pedido ${code} não foi gravado no banco`);
-      else if (rows[0].total_cents !== 3200 || rows[0].items_cents !== 3200)
-        note(`pedido ${code} gravado com total ${rows[0].total_cents} e itens ${rows[0].items_cents}`);
+      try {
+        if (rows.length !== 1) note(`pedido ${code} não foi gravado no banco`);
+        else if (rows[0].total_cents !== 3200 || rows[0].items_cents !== 3200)
+          note(`pedido ${code} gravado com total ${rows[0].total_cents} e itens ${rows[0].items_cents}`);
+      } finally {
+        await db.query("delete from orders where code = $1 and customer_name = $2", [
+          code?.trim(),
+          SMOKE_NAME,
+        ]);
+      }
     }
 
     // Recarregar a confirmação não pode expulsar o cliente do pedido.
