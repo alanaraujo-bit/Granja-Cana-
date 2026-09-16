@@ -17,6 +17,7 @@ npm run build    # build de produção
 npm start        # serve o build
 npm run lint
 npm run icons    # regera os ícones da PWA a partir de assets/icon-source.svg
+npm run smoke    # percorre o fluxo de pedido em navegador real (servidor no ar)
 ```
 
 O service worker só é registrado em produção, para que o desenvolvimento
