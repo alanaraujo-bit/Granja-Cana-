@@ -3,14 +3,26 @@
  *
  * Percorre Home → pedido → checkout → confirmação exatamente como um cliente
  * faria e falha se algo se quebrar pelo caminho: erro de console, requisição
- * falha, rolagem horizontal ou fluxo que não chega ao fim.
+ * falha, rolagem horizontal ou fluxo que não chega ao fim. Com DATABASE_URL
+ * disponível (.env.local), confere também que o pedido exibido foi gravado
+ * no banco com o total certo.
  *
  *   npm run dev          (em outro terminal)
  *   npm run smoke
  *
  * Aceita outra origem: `npm run smoke -- http://localhost:3100`.
+ *
+ * Os pedidos criados levam o nome SMOKE_NAME, para serem identificados e
+ * apagados: `delete from orders where customer_name = 'Teste de fumaça'`.
  */
 import { chromium } from "playwright";
+import pg from "pg";
+
+const SMOKE_NAME = "Teste de fumaça";
+const db = process.env.DATABASE_URL
+  ? new pg.Client({ connectionString: process.env.DATABASE_URL })
+  : null;
+await db?.connect();
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
 const VIEWPORTS = [
@@ -35,7 +47,13 @@ for (const vp of VIEWPORTS) {
     if (m.type() === "error") note(`erro de console: ${m.text().slice(0, 200)}`);
   });
   page.on("pageerror", (e) => note(`exceção: ${e.message.slice(0, 200)}`));
-  page.on("requestfailed", (r) => note(`requisição falhou: ${r.url()}`));
+  page.on("requestfailed", (r) => {
+    const reason = r.failure()?.errorText ?? "";
+    // Navegar cancela o que ainda está em trânsito (prefetch, cauda da resposta
+    // da action). Isso é o navegador trabalhando, não uma falha.
+    if (reason.includes("ERR_ABORTED")) return;
+    note(`requisição falhou: ${r.method()} ${r.url()} (${reason})`);
+  });
 
   const checkOverflow = async (screen) => {
     const extra = await page.evaluate(
@@ -68,7 +86,7 @@ for (const vp of VIEWPORTS) {
     const alerts = await page.getByRole("alert").count();
     if (alerts < 4) note(`esperava 4 mensagens de erro, encontrei ${alerts}`);
 
-    await page.getByLabel("Nome").fill("Maria Souza");
+    await page.getByLabel("Nome").fill(SMOKE_NAME);
     await page.getByLabel("Endereço de entrega").fill("Rua das Palmeiras, 240 — Novo Horizonte");
     await page.getByRole("radio", { name: /h às/ }).first().click();
     await page.getByRole("radio", { name: /Dinheiro/ }).click();
@@ -82,6 +100,18 @@ for (const vp of VIEWPORTS) {
     if (!/^GC-\d{4}$/.test((code ?? "").trim())) note(`código de pedido inesperado: ${code}`);
     if (!(await page.getByText("R$ 32,00").first().isVisible())) note("total ausente na confirmação");
 
+    if (db) {
+      const { rows } = await db.query(
+        `select o.total_cents, o.customer_name, sum(i.unit_price_cents * i.qty)::int as items_cents
+           from orders o join order_items i on i.order_id = o.id
+          where o.code = $1 group by o.id`,
+        [code?.trim()],
+      );
+      if (rows.length !== 1) note(`pedido ${code} não foi gravado no banco`);
+      else if (rows[0].total_cents !== 3200 || rows[0].items_cents !== 3200)
+        note(`pedido ${code} gravado com total ${rows[0].total_cents} e itens ${rows[0].items_cents}`);
+    }
+
     // Recarregar a confirmação não pode expulsar o cliente do pedido.
     await page.reload({ waitUntil: "networkidle" });
     await page.waitForTimeout(600);
@@ -94,6 +124,7 @@ for (const vp of VIEWPORTS) {
 }
 
 await browser.close();
+await db?.end();
 
 if (problems.length > 0) {
   console.error("Falhas encontradas:\n" + problems.map((p) => "  - " + p).join("\n"));

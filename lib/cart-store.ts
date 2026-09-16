@@ -123,12 +123,6 @@ export function cartEggCount(lines: CartLine[]): number {
   }, 0);
 }
 
-/** Código curto e legível em voz alta, para o cliente citar no WhatsApp. */
-export function generateOrderCode(): string {
-  const n = Math.floor(Math.random() * 9000) + 1000;
-  return `GC-${n}`;
-}
-
 /**
  * Indica se o store já leu o localStorage. Toda tela que decide algo com base
  * no carrinho (redirecionar, mostrar estado vazio) precisa esperar por isto —

@@ -6,6 +6,33 @@
 
 export const OPEN_WEEKDAYS = [2, 3, 4, 5, 6, 0] as const; // ter..dom (0 = domingo)
 
+/** Canaã dos Carajás (PA): UTC−3, sem horário de verão. */
+export const GRANJA_TIME_ZONE = "America/Belem";
+
+const WALL_CLOCK = new Intl.DateTimeFormat("en-US", {
+  timeZone: GRANJA_TIME_ZONE,
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric",
+  hourCycle: "h23",
+});
+
+/**
+ * O relógio da granja, em qualquer máquina. Devolve um Date cujos getters
+ * locais (getHours, getDay…) leem o horário de Canaã — o servidor da Vercel
+ * roda em UTC, e um celular pode estar em outro fuso. Todas as regras deste
+ * arquivo trabalham com getters locais, então basta passar este valor.
+ */
+export function granjaNow(at: Date = new Date()): Date {
+  const p = Object.fromEntries(
+    WALL_CLOCK.formatToParts(at).map((part) => [part.type, Number(part.value)]),
+  );
+  return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+}
+
 export type Band = { startHour: number; endHour: number };
 
 export const BANDS: Band[] = [
@@ -117,6 +144,15 @@ export function getAvailableDays(now: Date = new Date(), maxDays = 5): DeliveryD
   }
 
   return days;
+}
+
+/** Faixa ainda oferecida em `now`. Um id de faixa expirada ou forjado não é encontrado. */
+export function findSlot(id: string, now: Date): DeliverySlot | undefined {
+  for (const day of getAvailableDays(now)) {
+    const slot = day.slots.find((s) => s.id === id);
+    if (slot) return slot;
+  }
+  return undefined;
 }
 
 /** Texto curto de status para a Home: aberto agora ou próxima abertura. */

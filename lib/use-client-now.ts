@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { granjaNow } from "./delivery";
 
 /**
  * A hora atual é estado do cliente: calculá-la na renderização do servidor
@@ -29,7 +30,9 @@ let cached: { at: number; value: Date } | null = null;
 
 function getSnapshot(): Date {
   const t = Date.now();
-  if (!cached || t - cached.at > FRESHNESS_MS) cached = { at: t, value: new Date(t) };
+  // No relógio da granja, e não no do aparelho: as faixas oferecidas aqui
+  // precisam ser as mesmas que o servidor aceita.
+  if (!cached || t - cached.at > FRESHNESS_MS) cached = { at: t, value: granjaNow(new Date(t)) };
   return cached.value;
 }
 

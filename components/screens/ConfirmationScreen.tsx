@@ -124,8 +124,8 @@ export function ConfirmationScreen() {
         </div>
 
         <p className="mt-4 px-3 text-center text-[12.5px] leading-relaxed text-ink-subtle">
-          Este é um pedido de demonstração. Nesta versão, nada é cobrado e nenhuma entrega é
-          agendada de verdade.
+          Versão de testes: o pedido fica registrado, mas nada é cobrado e a granja ainda não
+          recebe aviso automático.
         </p>
 
         <Link

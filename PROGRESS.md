@@ -117,9 +117,36 @@ Os ícones são gerados por `npm run icons` a partir de
 
 ---
 
+## Pedidos no servidor
+
+Finalizar o pedido chama a Server Action `placeOrder`
+(`lib/order-actions.ts`), que grava em `orders` e `order_items` numa
+transação. O carrinho só é esvaziado depois que o servidor confirma; em
+falha, o cliente vê a mensagem e continua com o pedido montado.
+
+### O servidor não confia no cliente
+A action é alcançável por POST direto. O cliente envia só produtos,
+quantidades, dados de entrega e o id da faixa. Preço, total, rótulo da faixa
+e código do pedido são decididos no servidor, a partir de `lib/products.ts`.
+
+### Preço congelado por item
+`order_items` guarda nome e preço unitário do momento da compra. Mudar o
+catálogo não reescreve pedidos antigos.
+
+### Relógio da granja
+A Vercel roda em UTC; um celular pode estar em outro fuso. `granjaNow()`
+(`lib/delivery.ts`) devolve a hora de Canaã (America/Belem), e tanto a tela
+quanto a action usam esse valor. Sem isso, das 21h à meia-noite o servidor
+já estaria "amanhã" e recusaria faixas válidas.
+
+### Código do pedido
+Continua `GC-` + 4 dígitos, fácil de ditar. É sorteado no servidor e único
+no banco; em colisão, sorteia outro. São 9.000 códigos — quando o volume se
+aproximar disso, aumentar para 5 dígitos.
+
 ## Fora do escopo desta fase
 
-Backend, autenticação, gateway de pagamento, rastreamento, painel
+Autenticação, gateway de pagamento, rastreamento, painel
 administrativo e módulo do entregador — conforme o briefing. A base está
 preparada para recebê-los, mas nada fictício foi construído.
 
@@ -127,7 +154,7 @@ preparada para recebê-los, mas nada fictício foi construído.
 
 1. Substituir a identidade provisória pelo material oficial
    (`components/brand/Wordmark.tsx` e `assets/icon-source.svg`).
-2. Persistir pedidos num backend real, trocando `completeOrder` por uma
-   chamada de rota; a forma do `PlacedOrder` já é a do domínio.
-3. Enviar a confirmação ao cliente e à granja.
-4. Histórico de pedidos, que o `PlacedOrder` já comporta.
+2. Avisar a granja de cada pedido novo (painel ou notificação).
+3. Enviar a confirmação ao cliente.
+4. Histórico de pedidos, lido de `orders`.
+5. Limitar envios por IP antes de divulgar: a action é pública.

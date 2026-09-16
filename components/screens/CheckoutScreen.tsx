@@ -8,14 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { OrderTotals } from "@/components/order/OrderTotals";
 import { SlotPicker } from "@/components/order/SlotPicker";
 import { PaymentPicker } from "@/components/order/PaymentPicker";
-import {
-  cartCount,
-  cartTotalCents,
-  generateOrderCode,
-  useCart,
-  useCartHydrated,
-  type PaymentMethod,
-} from "@/lib/cart-store";
+import { cartCount, useCart, useCartHydrated, type PaymentMethod } from "@/lib/cart-store";
+import { placeOrder, type PlaceOrderResult } from "@/lib/order-actions";
 import { getAvailableDays } from "@/lib/delivery";
 import { useClientNow } from "@/lib/use-client-now";
 
@@ -35,6 +29,7 @@ export function CheckoutScreen() {
   const [changeFor, setChangeFor] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Finalizar o pedido esvazia o carrinho. Sem esta trava, a regra de
   // "carrinho vazio" dispararia no mesmo instante e mandaria o cliente de
   // volta para o resumo em vez da confirmação.
@@ -86,24 +81,50 @@ export function CheckoutScreen() {
     }
 
     setSubmitting(true);
+    setSubmitError(null);
+
+    // Único estado assíncrono honesto do fluxo: o envio do pedido ao servidor.
+    // Preço, total e código são decididos lá; daqui só vai o que o cliente escolheu.
+    let result: PlaceOrderResult;
+    try {
+      result = await placeOrder({
+        lines,
+        slotId: slot!.id,
+        payment: payment!,
+        customerName: name,
+        address,
+        reference,
+        changeForCents: payment === "dinheiro" ? parseChange(changeFor) : null,
+      });
+    } catch {
+      // Sem rede ou servidor fora do ar: a action nem chegou a responder.
+      result = { ok: false, reason: "unavailable" };
+    }
+
+    if (!result.ok) {
+      setSubmitting(false);
+      if (result.reason === "slot") {
+        setSlotId(null);
+        setErrors((e) => ({ ...e, slot: "Esse horário acabou de encerrar. Escolha outro." }));
+        requestAnimationFrame(() => {
+          document
+            .querySelector<HTMLElement>("[data-slot-section]")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      } else {
+        setSubmitError(
+          result.reason === "invalid"
+            ? "Algo nos dados do pedido não confere. Revise e tente de novo."
+            : "Não conseguimos enviar seu pedido agora. Tente de novo em instantes.",
+        );
+      }
+      return;
+    }
+
+    // Só depois da gravação: finalizar esvazia o carrinho, e `placed` impede
+    // que o carrinho vazio mande o cliente de volta ao resumo.
     setPlaced(true);
-    // Único estado assíncrono honesto do fluxo: o envio do pedido. O restante
-    // dos dados é local, e exibir "carregando" sobre eles seria encenação.
-    await new Promise((r) => setTimeout(r, 900));
-
-    completeOrder({
-      code: generateOrderCode(),
-      lines,
-      totalCents: cartTotalCents(lines),
-      slotId: slot!.id,
-      slotLabel: `${slot!.dayLabel}, ${slot!.dateLabel} · ${slot!.timeLabel}`,
-      payment: payment!,
-      customerName: name.trim(),
-      address: [address.trim(), reference.trim()].filter(Boolean).join(" · "),
-      changeForCents: payment === "dinheiro" ? parseChange(changeFor) : null,
-      placedAt: new Date().toISOString(),
-    });
-
+    completeOrder(result.order);
     router.replace("/confirmacao");
   }
 
@@ -164,7 +185,7 @@ export function CheckoutScreen() {
         </Section>
 
         <Section title="Quando entregar">
-          <div data-error-anchor={anchor === "slot" ? "" : undefined}>
+          <div data-slot-section data-error-anchor={anchor === "slot" ? "" : undefined}>
             {days === null ? (
               <SlotSkeleton />
             ) : days.length === 0 ? (
@@ -217,11 +238,17 @@ export function CheckoutScreen() {
           <OrderTotals lines={lines} compact />
         </Section>
 
-        <div className="pad-safe-b h-[6.5rem]" />
+        {/* Reserva a altura da barra fixa, que cresce quando mostra o erro de envio. */}
+        <div className={`pad-safe-b ${submitError ? "h-[9.5rem]" : "h-[6.5rem]"}`} />
       </main>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center">
         <div className="pointer-events-auto w-full max-w-[30rem] bg-canvas px-4 pt-3 shadow-bar">
+          {submitError && (
+            <p role="alert" className="animate-fade-in px-1 pb-2.5 text-center text-[13px] font-medium text-critical">
+              {submitError}
+            </p>
+          )}
           <Button size="lg" full loading={submitting} onClick={handleSubmit}>
             Finalizar pedido
           </Button>

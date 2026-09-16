@@ -18,6 +18,7 @@ npm start        # serve o build
 npm run lint
 npm run icons    # regera os ícones da PWA a partir de assets/icon-source.svg
 npm run smoke    # percorre o fluxo de pedido em navegador real (servidor no ar)
+npm run db:migrate  # aplica db/schema.sql no banco de .env.local
 ```
 
 O service worker só é registrado em produção, para que o desenvolvimento
@@ -32,7 +33,8 @@ components/
   order/        peças do fluxo de pedido
   screens/      as telas
   ui/           primitivos (botão, campo, cabeçalho, seletor de quantidade)
-lib/            domínio: produtos, preços, faixas de entrega, carrinho
+lib/            domínio: produtos, preços, faixas de entrega, carrinho, pedidos
+db/             esquema do Postgres
 assets/         fonte dos ícones
 scripts/        geração de ícones
 ```
@@ -54,12 +56,25 @@ Preços são sempre inteiros em centavos e só viram texto em `lib/format.ts`.
 | --- | --- | --- |
 | Código | GitHub `alanaraujo-bit/Granja-Cana-` | `main` é a branch de produção |
 | App | Vercel, time `aionixdev`, projeto `granja-canaa` | push em `main` publica; outras branches geram preview |
-| Banco | Railway, projeto `granja-canaa`, serviço `Postgres` | ainda sem tabelas; reservado para os pedidos |
+| Banco | Railway, projeto `granja-canaa`, serviço `Postgres` | pedidos em `orders` e `order_items` |
 
-`DATABASE_URL` já está cadastrada na Vercel (produção, preview e
-desenvolvimento) apontando para a URL pública do Postgres. Para trabalhar
-localmente: `vercel env pull .env.local`. Hoje os três ambientes usam o mesmo
-banco — separar antes de haver pedidos reais.
+O mesmo Postgres guarda dois bancos, e `DATABASE_URL` na Vercel aponta para
+cada um pela URL pública do proxy TCP (o endereço `*.railway.internal` não é
+alcançável de fora da Railway):
+
+| Ambiente Vercel | Banco |
+| --- | --- |
+| Production | `railway` — pedidos reais |
+| Preview e Development | `granja_dev` — testes |
+
+Para trabalhar localmente: `vercel env pull .env.local` (traz o `granja_dev`).
+
+Mudou `db/schema.sql`? Aplique nos dois bancos **antes** de publicar:
+
+```bash
+npm run db:migrate                                # granja_dev
+DATABASE_URL="<url de produção>" npm run db:migrate   # railway
+```
 
 ## Documentos
 
@@ -68,10 +83,10 @@ banco — separar antes de haver pedidos reais.
 
 ## Escopo desta fase
 
-O cliente navega, escolhe, monta o pedido e chega a uma confirmação
-demonstrativa. Os dados são locais: **nenhuma cobrança é feita e nenhuma
-entrega é agendada de verdade**.
+O cliente navega, escolhe, monta o pedido e o pedido é gravado no Postgres.
+**Nenhuma cobrança é feita e a granja ainda não é avisada** — não há painel
+nem notificação.
 
-Backend, autenticação, pagamento, rastreamento, painel administrativo e
+Autenticação, pagamento, rastreamento, painel administrativo e
 módulo do entregador ficaram fora desta fase, de propósito. A base está
 preparada para recebê-los.
