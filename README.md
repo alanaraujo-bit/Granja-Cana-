@@ -48,6 +48,19 @@ scripts/        geração de ícones
 
 Preços são sempre inteiros em centavos e só viram texto em `lib/format.ts`.
 
+## Infraestrutura
+
+| Peça | Onde | Observação |
+| --- | --- | --- |
+| Código | GitHub `alanaraujo-bit/Granja-Cana-` | `main` é a branch de produção |
+| App | Vercel, time `aionixdev`, projeto `granja-canaa` | push em `main` publica; outras branches geram preview |
+| Banco | Railway, projeto `granja-canaa`, serviço `Postgres` | ainda sem tabelas; reservado para os pedidos |
+
+`DATABASE_URL` já está cadastrada na Vercel (produção, preview e
+desenvolvimento) apontando para a URL pública do Postgres. Para trabalhar
+localmente: `vercel env pull .env.local`. Hoje os três ambientes usam o mesmo
+banco — separar antes de haver pedidos reais.
+
 ## Documentos
 
 - `PROGRESS.md` — estado do produto e as decisões por trás dele
