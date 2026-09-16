@@ -1,26 +1,212 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---------------------------------------------------------------------------
+   Granja Canaã — tokens de design
+   Verde profundo/oliva como identidade. Superfícies claras e quentes, nunca
+   branco clínico. Gema usada como acento pontual, nunca como área.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* Ponto de corte extra para celulares pequenos (abaixo de 376px). */
+  --breakpoint-xs: 23.5rem;
+
+  /* Tipografia — as variáveis -src vêm de next/font, aplicadas no <html>. */
+  --font-sans: var(--font-sans-src), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display-src), ui-serif, Georgia, serif;
+
+  /* Verde — identidade principal */
+  --color-canaa-50: #f1f5ef;
+  --color-canaa-100: #dfe8da;
+  --color-canaa-200: #c0d0b7;
+  --color-canaa-300: #98b08c;
+  --color-canaa-400: #6e8c61;
+  --color-canaa-500: #4e6d43;
+  --color-canaa-600: #3a5532;
+  --color-canaa-700: #2e4429;
+  --color-canaa-800: #243521;
+  --color-canaa-900: #1b281a;
+
+  /* Gema — acento quente */
+  --color-gema-100: #fbeed4;
+  --color-gema-200: #f5d99f;
+  --color-gema-300: #eec269;
+  --color-gema-400: #e2a53c;
+  --color-gema-500: #c9862a;
+  --color-gema-600: #a36a1f;
+
+  /* Superfícies e texto */
+  --color-canvas: #f7f4ec;
+  --color-surface: #fdfbf6;
+  --color-surface-sunken: #f1ede2;
+  --color-line: #e4ddcd;
+  --color-line-strong: #d3c9b3;
+  --color-ink: #1d2419;
+  --color-ink-muted: #6a7063;
+  --color-ink-subtle: #949a8d;
+
+  /* Semânticos */
+  --color-positive: #3f7a4f;
+  --color-critical: #a3382f;
+
+  /* Raios */
+  --radius-card: 1.25rem;
+  --radius-sheet: 1.75rem;
+  --radius-control: 0.875rem;
+  --radius-pill: 999px;
+
+  /* Elevação — sombras quentes, nunca cinza puro */
+  --shadow-raised: 0 1px 2px rgb(45 38 22 / 0.05), 0 2px 8px rgb(45 38 22 / 0.04);
+  --shadow-lifted: 0 2px 4px rgb(45 38 22 / 0.06), 0 12px 28px -8px rgb(45 38 22 / 0.12);
+  --shadow-bar: 0 -1px 0 rgb(45 38 22 / 0.06), 0 -8px 24px -12px rgb(45 38 22 / 0.18);
+
+  /* Movimento — curto e funcional */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-rise: rise 0.42s var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 0.3s var(--ease-out-soft) both;
+  --animate-pop: pop 0.34s var(--ease-out-soft) both;
+  --animate-draw: draw 0.5s var(--ease-out-soft) 0.12s both;
+  --animate-sweep: sweep 1.4s linear infinite;
+  --animate-spin-soft: spin 0.7s linear infinite;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  0% { opacity: 0; transform: scale(0.82); }
+  60% { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes draw {
+  from { stroke-dashoffset: var(--dash, 48); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------------------------------------------------------------------------
+   Base — comportamento de aplicativo, não de página web
+--------------------------------------------------------------------------- */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    height: 100%;
+    background-color: var(--color-canaa-900);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    background-color: var(--color-canaa-900);
+    color: var(--color-ink);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+    /* Cromo da interface não é conteúdo: não deve ser selecionável. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Conteúdo que o cliente pode precisar copiar volta a ser selecionável. */
+  [data-selectable] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+
+  /* Scrollbars fora da interface, em qualquer engine. */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* 16px é o limiar real que evita o zoom de foco no iOS. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-canaa-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-gema-200);
+    color: var(--color-canaa-900);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .tap {
+    touch-action: manipulation;
+    transition: transform 0.16s var(--ease-out-soft), opacity 0.16s var(--ease-out-soft),
+      background-color 0.16s var(--ease-out-soft), border-color 0.16s var(--ease-out-soft);
+  }
+  .tap:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .pad-safe-b {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .pad-safe-t {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+
+  /* Números tabulares em preços e contadores: nada dança ao mudar de valor. */
+  .nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

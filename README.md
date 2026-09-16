@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Granja Canaã
 
-## Getting Started
+Aplicativo de pedidos e entrega de ovos caipiras da Granja Canaã, em
+Canaã dos Carajás. PWA instalável, feita para o celular.
 
-First, run the development server:
+## Rodar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Outros comandos:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build    # build de produção
+npm start        # serve o build
+npm run lint
+npm run icons    # regera os ícones da PWA a partir de assets/icon-source.svg
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O service worker só é registrado em produção, para que o desenvolvimento
+nunca seja servido a partir do cache.
 
-## Learn More
+## Como o projeto se organiza
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/            rotas (Home, pedido, checkout, confirmação, offline) e manifest
+components/
+  brand/        identidade — único lugar que precisa mudar quando o logo chegar
+  order/        peças do fluxo de pedido
+  screens/      as telas
+  ui/           primitivos (botão, campo, cabeçalho, seletor de quantidade)
+lib/            domínio: produtos, preços, faixas de entrega, carrinho
+assets/         fonte dos ícones
+scripts/        geração de ícones
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Onde mexer
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Para mudar | Edite |
+| --- | --- |
+| Produtos e preços | `lib/products.ts` |
+| Dias, horários e faixas de entrega | `lib/delivery.ts` |
+| Cores, tipografia, raios, sombras, animações | bloco `@theme` em `app/globals.css` |
+| Logomarca | `components/brand/Wordmark.tsx` e `assets/icon-source.svg` |
 
-## Deploy on Vercel
+Preços são sempre inteiros em centavos e só viram texto em `lib/format.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentos
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `PROGRESS.md` — estado do produto e as decisões por trás dele
+- `BLOCKERS.md` — o que depende de material ou definição da granja
+
+## Escopo desta fase
+
+O cliente navega, escolhe, monta o pedido e chega a uma confirmação
+demonstrativa. Os dados são locais: **nenhuma cobrança é feita e nenhuma
+entrega é agendada de verdade**.
+
+Backend, autenticação, pagamento, rastreamento, painel administrativo e
+módulo do entregador ficaram fora desta fase, de propósito. A base está
+preparada para recebê-los.

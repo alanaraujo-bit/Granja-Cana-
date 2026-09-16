@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Marca provisória da Granja Canaã: um ovo, luz quente, verde profundo.
+       Substituir por vetor oficial e rodar `npm run icons`. -->
+  <defs>
+    <linearGradient id="field" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#31492b"/>
+      <stop offset="1" stop-color="#1b281a"/>
+    </linearGradient>
+    <!-- Luz vinda de cima à esquerda; a casca esquenta na borda oposta. -->
+    <radialGradient id="shell" cx="0.36" cy="0.28" r="0.92">
+      <stop offset="0" stop-color="#fffdf8"/>
+      <stop offset="0.48" stop-color="#f8f0de"/>
+      <stop offset="0.82" stop-color="#eed9ad"/>
+      <stop offset="1" stop-color="#e2bb77"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#field)"/>
+
+  <path d="M256 112c74 0 118 118 118 184 0 66-53 108-118 108s-118-42-118-108c0-66 44-184 118-184z"
+        fill="url(#shell)"/>
+</svg>
